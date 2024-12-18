@@ -6,6 +6,8 @@ const app = express();
 // npx prisma init
 // npx prisma migrate dev --name init
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(itemRoutes);
 app.use("/", (req, res) => {
   res.send("Hello, POS!!!");
