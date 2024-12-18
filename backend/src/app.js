@@ -8,7 +8,8 @@ const app = express();
 
 app.use(express.json());
 
-app.use(itemRoutes);
+app.use("/api/v1/items", itemRoutes);
+
 app.use("/", (req, res) => {
   res.send("Hello, POS!!!");
 });

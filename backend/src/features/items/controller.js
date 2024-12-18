@@ -49,21 +49,19 @@ const createItem = async (req, res) => {
 };
 
 const getItemById = async (req, res) => {
-    
-    try {
-      const pathVariable = req.params.id;
-      const verifiedId = z.string().nonempty().parse(pathVariable);
-    
-      const isExist = await prisma.item.findFirst({ where: { id: verifiedId } });
-    
-      if (!isExist)
-        return res.json({ message: "Item not found.", data: null }).status(404);
-    
-      return res.json({ message: "Item found.", data: isExist }).status(200);
-    
+  try {
+    const pathVariable = req.params.id;
+    const verifiedId = z.string().nonempty().parse(pathVariable);
+
+    const isExist = await prisma.item.findFirst({ where: { id: verifiedId } });
+
+    if (!isExist)
+      return res.json({ message: "Item not found.", data: null }).status(404);
+
+    return res.json({ message: "Item found.", data: isExist }).status(200);
   } catch (error) {
-    if(error instanceof ZodError) return res.json({}).status(400)
-    if(error instanceof Error) return res.json({}).status(500)
+    if (error instanceof ZodError) return res.json({}).status(400);
+    if (error instanceof Error) return res.json({}).status(500);
   }
 };
 
@@ -80,6 +78,50 @@ const getAllItems = async (req, res) => {
     return res
       .json({ message: "Internal Server Error", data: null })
       .status(500);
+  }
+};
+
+const updateItem = async (req, res) => {
+  try {
+    const reqBody = req.body;
+    const pathVariable = req.params.id
+
+    const verifiedPayload = z
+      .object({
+        name: z.string().nonempty(),
+        price: z.number().min(0.1).positive(),
+      })
+      .parse(reqBody);
+
+    const { name, price } = verifiedPayload;
+
+    const verifiedId = z.string().nonempty().parse(pathVariable)
+
+    console.log(verifiedId)
+
+    const foundItem = await prisma.item.findFirst({
+      where: { id: verifiedId },
+    });
+
+    if (!foundItem)
+      return res.json({ message: "Item not found.", data: null }).status(404);
+
+    const updatedItem = await prisma.item.update({
+      where: { id: verifiedId },
+      data: {
+        name: name,
+        price: price,
+      },
+    });
+
+    return res.json({ message: "Item updated", data: updatedItem }).status(200);
+  } catch (error) {
+    if (error instanceof ZodError)
+      return res.json({ message: "Bad request", data: null }).status(400);
+    if (error instanceof Error)
+      return res
+        .json({ message: "Internal Server Error", data: null })
+        .status(500);
   }
 };
 
@@ -110,6 +152,7 @@ const controllers = {
   getItemById,
   getAllItems,
   deleteItemById,
+  updateItem,
 };
 
 export default controllers;
