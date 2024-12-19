@@ -1,5 +1,11 @@
-import prisma from "../../prisma.js";
-import z, { date, ZodError } from "zod";
+import z, { ZodError } from "zod";
+import service from "./service.js";
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 
 const createItem = async (req, res) => {
   try {
@@ -13,24 +19,14 @@ const createItem = async (req, res) => {
 
     const { name, price } = verifiedPayload;
 
-    const isExist = await prisma.item.findFirst({
-      where: {
-        name: name.toLocaleLowerCase(),
-      },
-    });
+    const isExist = await service.getItemByName(name);
 
     if (isExist)
       return res
         .json({ message: "Item already existed.", data: null })
         .status(409);
 
-    const item = await prisma.item.create({
-      data: {
-        name: name.toLocaleLowerCase(),
-        price: price,
-        createdAt: new Date(),
-      },
-    });
+    const item = await service.createItem(name, price);
 
     return res.json({ message: "Item created", data: item }).status(201);
   } catch (error) {
@@ -53,12 +49,12 @@ const getItemById = async (req, res) => {
     const pathVariable = req.params.id;
     const verifiedId = z.string().nonempty().parse(pathVariable);
 
-    const isExist = await prisma.item.findFirst({ where: { id: verifiedId } });
+    const existedItem = await service.getItemById(verifiedId);
 
-    if (!isExist)
+    if (!existedItem)
       return res.json({ message: "Item not found.", data: null }).status(404);
 
-    return res.json({ message: "Item found.", data: isExist }).status(200);
+    return res.json({ message: "Item found.", data: existedItem }).status(200);
   } catch (error) {
     if (error instanceof ZodError) return res.json({}).status(400);
     if (error instanceof Error) return res.json({}).status(500);
@@ -67,7 +63,7 @@ const getItemById = async (req, res) => {
 
 const getAllItems = async (req, res) => {
   try {
-    const items = await prisma.item.findMany();
+    const items = await service.getAllItems();
     return res
       .json({
         message: "All items",
@@ -84,7 +80,7 @@ const getAllItems = async (req, res) => {
 const updateItem = async (req, res) => {
   try {
     const reqBody = req.body;
-    const pathVariable = req.params.id
+    const pathVariable = req.params.id;
 
     const verifiedPayload = z
       .object({
@@ -95,24 +91,14 @@ const updateItem = async (req, res) => {
 
     const { name, price } = verifiedPayload;
 
-    const verifiedId = z.string().nonempty().parse(pathVariable)
+    const verifiedId = z.string().nonempty().parse(pathVariable);
 
-    console.log(verifiedId)
-
-    const foundItem = await prisma.item.findFirst({
-      where: { id: verifiedId },
-    });
+    const foundItem = await service.getItemById(verifiedId);
 
     if (!foundItem)
       return res.json({ message: "Item not found.", data: null }).status(404);
 
-    const updatedItem = await prisma.item.update({
-      where: { id: verifiedId },
-      data: {
-        name: name,
-        price: price,
-      },
-    });
+    const updatedItem = await service.updateItem(name, price, verifiedId);
 
     return res.json({ message: "Item updated", data: updatedItem }).status(200);
   } catch (error) {
@@ -130,11 +116,11 @@ const deleteItemById = async (req, res) => {
     const pathVariable = req.params.id;
     const verifiedId = z.string().nonempty().parse(pathVariable);
 
-    const isExist = await prisma.item.findFirst({ where: { id: verifiedId } });
+    const foundItem = await service.getItemById(verifiedId);
 
-    if (!isExist) return res.json({ message: "Item not found" }).status(404);
+    if (!foundItem) return res.json({ message: "Item not found" }).status(404);
 
-    await prisma.item.delete({ where: { id: verifiedId } });
+    await service.deleteItemById(foundItem.id);
 
     return res.json({ message: "Item deleted." }).status(200);
   } catch (error) {
