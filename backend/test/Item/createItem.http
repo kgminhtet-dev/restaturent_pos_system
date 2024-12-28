@@ -1,8 +1,0 @@
-POST http://localhost:3001/api/v1/items HTTP/1.1
-content-type: application/json
-
-
-{
-    "name": "chicken curry",
-    "price": 29.05
-}

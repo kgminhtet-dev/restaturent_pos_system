@@ -12,11 +12,17 @@ const findItemByName = async (itemName) => {
   return await prisma.item.findFirst({ where: { name: itemName } });
 };
 
-const createItem = async (name, price) => {
+const createItem = async (name, price, categoryId) => {
   return await prisma.item.create({
     data: {
       name: name,
       price: price,
+      available: true,
+      category: {
+        connect: {
+          id: categoryId,
+        },
+      },
       createdAt: new Date(),
     },
   });
@@ -42,5 +48,5 @@ export default {
   getItemByName: findItemByName,
   createItem,
   updateItem,
-  deleteItemById
+  deleteItemById,
 };

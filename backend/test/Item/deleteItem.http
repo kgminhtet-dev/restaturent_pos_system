@@ -1,2 +1,0 @@
-DELETE   http://localhost:3001/api/v1/items/0f90be0b-6417-48ee-9328-6fecf4419cd3 HTTP/1.1
-Content-Type: application/json

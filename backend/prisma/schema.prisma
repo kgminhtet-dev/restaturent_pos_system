@@ -14,9 +14,27 @@ datasource db {
 }
 
 model Item {
+  id         String   @id @default(uuid())
+  name       String
+  price      Float
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  available  Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Category {
   id        String   @id @default(uuid())
   name      String
-  price     Float
+  items     Item[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Table {
+  id     String @id @default(uuid())
+  number Int    @unique
+
+  @@map("Tbl_info")
 }

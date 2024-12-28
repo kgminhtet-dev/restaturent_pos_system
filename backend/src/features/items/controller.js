@@ -1,12 +1,22 @@
 import z, { ZodError } from "zod";
 import service from "./service.js";
+import categoryService from "../category/service.js";
+
+const ZodErrorResponse = {
+  message: "Bad request",
+  data: null,
+};
+
+const ErrorResponse = {
+  message: "Internal Server Error",
+  data: null,
+};
 
 /**
- * @param {import('express').Request} req
- * @param {import('express').Response} res
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
  * @returns {Promise<void>}
  */
-
 const createItem = async (req, res) => {
   try {
     const reqBody = req.body;
@@ -14,36 +24,46 @@ const createItem = async (req, res) => {
       .object({
         name: z.string().min(1).nonempty(),
         price: z.number().min(1).positive(),
+        categoryName: z.string().min(1).nonempty(),
       })
       .parse(reqBody);
 
-    const { name, price } = verifiedPayload;
+    const { name, price, categoryName } = verifiedPayload;
 
-    const isExist = await service.getItemByName(name);
+    const isItemExisted = await service.getItemByName(name);
 
-    if (isExist)
+    if (isItemExisted)
       return res
         .json({ message: "Item already existed.", data: null })
         .status(409);
 
-    const item = await service.createItem(name, price);
+    const category = await categoryService.getCategoryByName(categoryName);
+
+    if (category !== null) {
+      const item = await service.createItem(name, price, category.id);
+      return res.json({ message: "Item created", data: item }).status(201);
+    }
+    const createdCategory = await categoryService.createCategory(categoryName);
+    const item = await service.createItem(name, price, createdCategory.id);
 
     return res.json({ message: "Item created", data: item }).status(201);
   } catch (error) {
     if (error instanceof ZodError)
       return res
-        .json({
-          message: "Bad request",
-          data: null,
-        })
+        .json(ZodErrorResponse)
         .status(400);
     if (error instanceof Error)
       return res
-        .json({ message: "Internal Server Error", data: null })
+        .json(ErrorResponse)
         .status(500);
   }
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
 const getItemById = async (req, res) => {
   try {
     const pathVariable = req.params.id;
@@ -56,11 +76,16 @@ const getItemById = async (req, res) => {
 
     return res.json({ message: "Item found.", data: existedItem }).status(200);
   } catch (error) {
-    if (error instanceof ZodError) return res.json({}).status(400);
-    if (error instanceof Error) return res.json({}).status(500);
+    if (error instanceof ZodError) return res.json(ZodErrorResponse).status(400);
+    if (error instanceof Error) return res.json(ErrorResponse).status(500);
   }
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
 const getAllItems = async (req, res) => {
   try {
     const items = await service.getAllItems();
@@ -72,11 +97,16 @@ const getAllItems = async (req, res) => {
       .status(200);
   } catch (error) {
     return res
-      .json({ message: "Internal Server Error", data: null })
+      .json(ErrorResponse)
       .status(500);
   }
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
 const updateItem = async (req, res) => {
   try {
     const reqBody = req.body;
@@ -103,14 +133,19 @@ const updateItem = async (req, res) => {
     return res.json({ message: "Item updated", data: updatedItem }).status(200);
   } catch (error) {
     if (error instanceof ZodError)
-      return res.json({ message: "Bad request", data: null }).status(400);
+      return res.json(ZodErrorResponse).status(400);
     if (error instanceof Error)
       return res
-        .json({ message: "Internal Server Error", data: null })
+        .json(ErrorResponse)
         .status(500);
   }
 };
 
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
 const deleteItemById = async (req, res) => {
   try {
     const pathVariable = req.params.id;
@@ -125,10 +160,10 @@ const deleteItemById = async (req, res) => {
     return res.json({ message: "Item deleted." }).status(200);
   } catch (error) {
     if (error instanceof ZodError)
-      return res.json({ message: "Bad request", data: null }).status(400);
+      return res.json(ZodErrorResponse).status(400);
     if (error instanceof Error)
       return res
-        .json({ message: "Internal Server Error", data: null })
+        .json(ErrorResponse)
         .status(500);
   }
 };
