@@ -1,0 +1,8 @@
+POST localhost:3001/api/v1/items
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Tea",
+  "price": 100.1
+}

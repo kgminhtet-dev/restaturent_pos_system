@@ -9,15 +9,12 @@ const app = express();
 // npx prisma migrate dev --name init
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/items", itemRoutes);
-
 app.use("/api/v1/categories", categoryRoutes);
-
 app.use("/api/v1/tables", tableRoutes);
 
-app.use("/", (req, res) => {
-  res.send("Hello, POS!!!");
-});
+app.use(itemRoutes);
 
 export default app;
