@@ -1,8 +1,12 @@
 import express from "express";
-import controller from "./controller.js";
+import controllers from "./controller.js";
 
 const itemRoutes = express.Router();
-itemRoutes.get("/api/v1/items", controller.getItems);
-itemRoutes.post("/api/v1/items", controller.createItem);
+
+itemRoutes.get("/", controllers.getAllItems);
+itemRoutes.get("/:id", controllers.getItemById);
+itemRoutes.post("/", controllers.createItem);
+itemRoutes.put("/:id", controllers.updateItem)
+itemRoutes.delete("/:id", controllers.deleteItemById);
 
 export default itemRoutes;
